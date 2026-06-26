@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>요리 수익 계산기</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 1500px;
+      margin: auto;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #263244;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    select,
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #374151;
+      background: #1f2937;
+      color: #fff;
+    }
+
+    .header {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .header img {
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+      background: #1f2937;
+      border-radius: 16px;
+      padding: 10px;
+    }
+
+    .title {
+      font-size: 34px;
+      font-weight: 800;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .item {
+      background: #1f2937;
+      padding: 12px;
+      border-radius: 14px;
+    }
+
+    .item img {
+      width: 64px;
+      height: 64px;
+      display: block;
+      margin: auto;
+      object-fit: contain;
+    }
+
+    .need {
+      color: #9ca3af;
+      font-size: 13px;
+    }
+
+    .unit {
+      color: #93c5fd;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .result {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: linear-gradient(135deg, #07152f, #12315f);
+      padding: 24px;
+      border-radius: 20px;
+    }
+
+    .big {
+      font-size: 54px;
+      font-weight: 800;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, .08);
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .small {
+      color: #9ca3af;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div class="card">
+      <select id="recipe"></select>
+    </div>
+
+    <div class="card">
+      <div class="header">
+        <img id="recipeImage" src="images/recipes/placeholder.png">
+        <div id="recipeTitle" class="title"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>재료 가격 입력 (64개 가격)</h2>
+      <div id="ingredients" class="grid"></div>
+    </div>
+
+    <div class="card result">
+      <div>
+        <h3>요리 시세 (1개)</h3>
+        <input id="marketPrice" type="number" value="0">
+      </div>
+      <div class="panel">
+        <div id="profit" class="big">0원</div>
+        <div>제작 원가 : <b id="costPrice">0원</b></div>
+        <div>판매가(1.5배) : <b id="sellPrice">0원</b></div>
+        <div class="stats">
+          <div class="stat">
+            <div class="small">한 셋(64개) 순수익</div>
+            <div id="setProfit">0원</div>
+          </div>
+          <div class="stat">
+            <div class="small">한 박스(54셋) 순수익</div>
+            <div id="boxProfit">0원</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const recipes = {
+      "토마토 스파게티": {
+        image: "images/recipes/tomato_spaghetti.png",
+        ingredients: { "토마토 베이스": 1, "호박 묶음": 1 }
+      },
+      "어니언 링": {
+        image: "images/recipes/onion_ring.png",
+        ingredients: { "양파 베이스": 1, "감자 묶음": 1 }
+      },
+      "갈릭 케이크": {
+        image: "images/recipes/garlic_cake.png",
+        ingredients: { "마늘 베이스": 1, "당근 묶음": 1 }
+      },
+      "삼겹살 토마토 찌개": {
+        image: "images/recipes/pork_tomato_stew.png",
+        ingredients: {
+          "토마토 베이스": 2, "비트 묶음": 1, "요리용 소금": 1,
+          "익힌 돼지고기": 1, "익힌 돼지 삼겹살": 1
+        }
+      },
+      "삼색 아이스크림": {
+        image: "images/recipes/icecream.png",
+        ingredients: {
+          "양파 베이스": 2, "수박 묶음": 1, "코코넛": 1,
+          "설탕 큐브": 1, "요리용 우유": 1
+        }
+      },
+      "마늘 양갈비 핫도그": {
+        image: "images/recipes/lamb_hotdog.png",
+        ingredients: {
+          "마늘 베이스": 2, "감자 묶음": 1, "오일": 1,
+          "익힌 양고기": 1, "익힌 양 갈비살": 1
+        }
+      },
+      "달콤 시리얼": {
+        image: "images/recipes/cereal.png",
+        ingredients: {
+          "토마토 베이스": 2, "달콤한 열매 묶음": 1, "파인애플": 1,
+          "밀가루 반죽": 1, "오일": 1
+        }
+      },
+      "로스트 치킨 파이": {
+        image: "images/recipes/chicken_pie.png",
+        ingredients: {
+          "마늘 베이스": 2, "당근 묶음": 1, "버터 조각": 1,
+          "익힌 닭고기": 1, "익힌 닭 다리살": 1
+        }
+      },
+      "스윗 치킨 햄버거": {
+        image: "images/recipes/chicken_burger.png",
+        ingredients: {
+          "토마토 베이스": 1, "양파 베이스": 1, "비트 묶음": 1,
+          "달콤한 열매 묶음": 1, "익힌 닭 가슴살": 1, "익힌 닭 다리살": 1
+        }
+      },
+      "토마토 파인애플 피자": {
+        image: "images/recipes/pizza.png",
+        ingredients: {
+          "토마토 베이스": 2, "마늘 베이스": 1, "파인애플": 1,
+          "치즈 조각": 1, "스테이크": 1, "익힌 소 등심": 1
+        }
+      },
+      "양파 수프": {
+        image: "images/recipes/onion_soup.png",
+        ingredients: {
+          "양파 베이스": 2, "마늘 베이스": 1, "감자 묶음": 1,
+          "코코넛": 1, "버터 조각": 1, "익힌 돼지 앞다리살": 1
+        }
+      },
+      "허브 삼겹살 찜": {
+        image: "images/recipes/herb_pork.png",
+        ingredients: {
+          "마늘 베이스": 2, "양파 베이스": 1, "호박 묶음": 1,
+          "감자 묶음": 1, "익힌 돼지고기": 1, "익힌 돼지 삼겹살": 1
+        }
+      },
+      "토마토 라자냐": {
+        image: "images/recipes/lasagna.png",
+        ingredients: {
+          "토마토 베이스": 1, "양파 베이스": 1, "마늘 베이스": 1,
+          "당근 묶음": 1, "호박 묶음": 1, "밀가루 반죽": 1, "익힌 양 다리살": 1
+        }
+      },
+      "딥 크림 빠네": {
+        image: "images/recipes/cream_pane.png",
+        ingredients: {
+          "토마토 베이스": 1, "양파 베이스": 1, "마늘 베이스": 1,
+          "수박 묶음": 1, "감자 묶음": 1, "치즈 조각": 1, "요리용 우유": 1
+        }
+      },
+      "트리플 소갈비 꼬치": {
+        image: "images/recipes/beef_skewer.png",
+        ingredients: {
+          "토마토 베이스": 1, "양파 베이스": 1, "마늘 베이스": 1,
+          "당근 묶음": 1, "비트 묶음": 1, "설탕 큐브": 1, "익힌 소 갈비살": 1
+        }
+      }
+    };
+
+    const ingredientImages = {
+      "토마토 베이스": "images/ingredients/tomato_base.png",
+      "양파 베이스": "images/ingredients/onion_base.png",
+      "마늘 베이스": "images/ingredients/garlic_base.png",
+
+      "호박 묶음": "images/ingredients/pumpkin_bundle.png",
+      "감자 묶음": "images/ingredients/potato_bundle.png",
+      "당근 묶음": "images/ingredients/carrot_bundle.png",
+      "비트 묶음": "images/ingredients/beet_bundle.png",
+      "수박 묶음": "images/ingredients/watermelon_bundle.png",
+      "달콤한 열매 묶음": "images/ingredients/sweet_berry_bundle.png",
+
+      "파인애플": "images/ingredients/pineapple.png",
+      "코코넛": "images/ingredients/coconut.png",
+
+      "밀가루 반죽": "images/ingredients/dough.png",
+      "버터 조각": "images/ingredients/butter.png",
+      "치즈 조각": "images/ingredients/cheese.png",
+
+      "설탕 큐브": "images/ingredients/sugar_cube.png",
+      "오일": "images/ingredients/oil.png",
+      "요리용 우유": "images/ingredients/milk.png",
+      "요리용 소금": "images/ingredients/salt.png",
+
+      "익힌 돼지고기": "images/ingredients/cooked_pork.png",
+      "익힌 돼지 삼겹살": "images/ingredients/pork_belly.png",
+      "익힌 돼지 앞다리살": "images/ingredients/pork_shoulder.png",
+
+      "익힌 닭고기": "images/ingredients/cooked_chicken.png",
+      "익힌 닭 다리살": "images/ingredients/chicken_leg.png",
+      "익힌 닭 가슴살": "images/ingredients/chicken_breast.png",
+
+      "익힌 양고기": "images/ingredients/cooked_lamb.png",
+      "익힌 양 갈비살": "images/ingredients/lamb_rib.png",
+      "익힌 양 다리살": "images/ingredients/lamb_leg.png",
+
+      "스테이크": "images/ingredients/steak.png",
+      "익힌 소 등심": "images/ingredients/beef_loin.png",
+      "익힌 소 갈비살": "images/ingredients/beef_rib.png"
+    };
+
+    const sel = document.getElementById('recipe');
+    Object.keys(recipes).forEach(r => sel.add(new Option(r,   r)));
+
+    function render() {
+      const r = recipes[sel.value];
+
+      recipeTitle.textContent = sel.value;
+      recipeImage.src = r.image;
+
+      let h = '';
+
+      Object.entries(r.ingredients).forEach(([n, q]) => {
+
+        const img =
+          ingredientImages[n] ||
+          "images/ingredients/placeholder.png";
+
+        h += `
+          <div class="item">
+
+            <img
+              src="${img}"
+              onerror="this.src='images/ingredients/placeholder.png'">
+
+            <b>${n}</b>
+
+            <div class="need">
+              필요 ${q}개
+            </div>
+
+            <input
+              class="price"
+              data-q="${q}"
+              type="number"
+              value="0"
+              placeholder="64개 가격">
+
+            <div class="unit">
+              1개 가격: 0
+            </div>
+
+          </div>
+        `;
+      });
+
+      ingredients.innerHTML = h;
+
+      calc();
+    }
+
+    function calc() {
+      let cost = 0;
+
+      document.querySelectorAll('.price').forEach(e => {
+
+        const unitPrice = (+e.value || 0) / 64;
+
+        const unitDiv = e.parentElement.querySelector('.unit');
+
+        unitDiv.textContent =
+          '1개 가격: ' +
+          Math.round(unitPrice).toLocaleString() + '원';
+
+        cost += unitPrice * (+e.dataset.q);
+
+      });
+
+      const marketPrice =
+        Number(document.getElementById('marketPrice').value) || 0;
+
+      const sellPrice = marketPrice * 1.5;
+
+      const profit = sellPrice - cost;
+
+      document.getElementById('costPrice').textContent =
+        Math.round(cost).toLocaleString() + '원';
+
+      document.getElementById('sellPrice').textContent =
+        Math.round(sellPrice).toLocaleString() + '원';
+
+      const profitElement =
+        document.getElementById('profit');
+
+      profitElement.textContent =
+        Math.round(profit).toLocaleString() + '원';
+
+      profitElement.style.color =
+        profit >= 0 ? '#22c55e' : '#ef4444';
+
+      document.getElementById('setProfit').textContent =
+        Math.round(profit * 64).toLocaleString() + '원';
+
+      document.getElementById('boxProfit').textContent =
+        Math.round(profit * 64 * 54).toLocaleString() + '원';
+    }
+
+    document.addEventListener('input', calc);
+    sel.addEventListener('change', render);
+    render();
+  </script>
+</body>
+</html>
